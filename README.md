@@ -1,210 +1,228 @@
-# 🎬 Cinema API - Check Point 1
+# 🎬 Cinema API — Check Point 2
 
-API RESTful para gerenciamento de filmes e salas de cinema, desenvolvida com
-Spring Boot, Spring Data JPA e MySQL, empacotada com Docker.
+API REST para gerenciamento de **filmes** e **salas** de cinema, desenvolvida em **Java 17 + Spring Boot**, com persistência em **SQL Server** via **Spring Data JPA**.
 
-## Tecnologias
+**Disciplina:** Microservices and Web Engineering — 2º semestre/2026
+**Professor:** Antonio Carlos de Lima Júnior
+
+## 👥 Integrantes
+
+| Nome completo | RM |
+|---|---|
+| `Lucas Lima Franco` | `550255` |
+| `Bruno Cesar Toledo d Oliveira` | `554878` |
+
+---
+
+## 🧰 Tecnologias
 
 - Java 17
-- Spring Boot
-- Spring Data JPA
-- MySQL 8
+- Spring Boot 4 (Spring Web MVC)
+- Spring Data JPA / Hibernate
+- Microsoft SQL Server (driver `mssql-jdbc`)
 - Swagger / OpenAPI (springdoc)
-- Docker
+- Maven (wrapper incluso: `mvnw`)
+- Docker (opcional)
 
----
+## 🗂️ Estrutura do projeto
 
-## ⚙️ Profiles
-
-A aplicação possui dois profiles de execução:
-
-| Profile   | Uso                          | Banco / Tabelas                                  |
-|-----------|-------------------------------|---------------------------------------------------|
-| `default` | Desenvolvimento local          | Criados automaticamente pelo Hibernate (`update`) |
-| `prd`     | Produção                       | **Não** são criados automaticamente (`ddl-auto=none`). Devem existir previamente — ver `database/schema.sql`. |
-
-O profile é definido pela variável de ambiente `SPRING_PROFILES_ACTIVE`.
-
----
-
-## 🔐 Variáveis de ambiente
-
-| Variável                | Descrição                          | Exemplo       |
-|--------------------------|-------------------------------------|---------------|
-| `SPRING_PROFILES_ACTIVE` | Profile ativo (`default` ou `prd`) | `prd`         |
-| `DB_SERVER_URL`          | Host do banco de dados             | `localhost`   |
-| `DB_SERVER_PORT`         | Porta do banco de dados            | `3306`        |
-| `DB_SCHEMA`              | Nome do schema                     | `cinema_db`   |
-| `DB_USER`                | Usuário do banco de dados          | `root`        |
-| `DB_PWD`                 | Senha do banco de dados            | `root`        |
-
-> No profile `default`, `DB_SERVER_URL`, `DB_SERVER_PORT`, `DB_SCHEMA`, `DB_USER`
-> e `DB_PWD` têm valores padrão (`localhost`, `3306`, `cinema_db`, `root`, `root`)
-> e podem ser omitidos. No profile `prd` **todas** são obrigatórias.
-
----
-
-## ▶️ Executando localmente (sem Docker)
-
-### 1. Suba um MySQL local
-
-```bash
-docker run -d \
-  --name mysql-cinema \
-  -e MYSQL_ROOT_PASSWORD=root \
-  -e MYSQL_DATABASE=cinema_db \
-  -p 3306:3306 \
-  mysql:8.0
+```
+Cinema-api-final
+├── database/schema.sql            # Script T-SQL das tabelas (opcional)
+├── src/main/java/.../cinema
+│   ├── Application.java           # Classe principal
+│   ├── controller/                # Endpoints REST (FilmeController, SalaController)
+│   ├── model/                     # Entidades JPA (Filme, Sala)
+│   └── repository/                # Repositórios Spring Data JPA
+├── src/main/resources
+│   └── application.properties     # Configuração da conexão com o SQL Server
+├── Dockerfile
+├── pom.xml
+└── mvnw / mvnw.cmd / .mvn/        # Maven Wrapper
 ```
 
-### 2. Rode a aplicação (profile default)
+---
+
+## 🔐 Conexão com o SQL Server
+
+A aplicação lê os dados de conexão de **variáveis de ambiente**, definidas em `src/main/resources/application.properties`.
+
+| Variável | Descrição | Valor padrão |
+|---|---|---|
+| `DB_SERVER_URL` | Host/IP do SQL Server | `localhost` |
+| `DB_SERVER_PORT` | Porta | `1433` |
+| `DB_SCHEMA` | Nome do banco de dados | `<PREENCHER>` |
+| `DB_USER` | Usuário | `sa` |
+| `DB_PWD` | Senha | `<PREENCHER ou "obrigatória, sem padrão">` |
+
+### 📌 Dados do banco disponibilizado para avaliação
+
+| Item | Valor |
+|---|---|
+| Host | `<PREENCHER>` |
+| Porta | `<PREENCHER>` |
+| Banco de dados | `<PREENCHER>` |
+| Usuário | `<PREENCHER>` |
+| Senha | `<PREENCHER>` |
+
+URL JDBC utilizada pela aplicação:
+
+```
+jdbc:sqlserver://<host>:<porta>;databaseName=<banco>;encrypt=true;trustServerCertificate=true
+```
+
+### Tabelas
+
+As tabelas `filmes` e `salas` são **criadas automaticamente** pelo Hibernate na primeira execução (`spring.jpa.hibernate.ddl-auto=update`). O banco de dados precisa existir. Se preferir criar manualmente, execute `database/schema.sql`:
 
 ```bash
+sqlcmd -S <host>,<porta> -U <usuario> -P <senha> -i database/schema.sql
+```
+
+---
+
+## ▶️ Como executar
+
+### Pré-requisitos
+
+- **JDK 17** instalado (`java -version`)
+- Acesso a um **SQL Server** (local ou remoto) com o banco criado
+- Não é necessário instalar o Maven (o `mvnw` baixa automaticamente)
+
+### Windows (PowerShell)
+
+```powershell
+$env:DB_SERVER_URL = "<host>"
+$env:DB_SERVER_PORT = "1433"
+$env:DB_SCHEMA = "<banco>"
+$env:DB_USER = "<usuario>"
+$env:DB_PWD = "<senha>"
+
 ./mvnw spring-boot:run
 ```
 
-Acesse em: `http://localhost:8080`
-
----
-
-## 🐳 Executando com Docker
-
-### 1. Build da imagem
-
-Na raiz do projeto:
+### Linux / macOS
 
 ```bash
-docker build -t cinema-api:1.0 .
+export DB_SERVER_URL=<host> DB_SERVER_PORT=1433 DB_SCHEMA=<banco> DB_USER=<usuario> DB_PWD=<senha>
+./mvnw spring-boot:run
 ```
 
-### 2. Rodar com o profile `default` (desenvolvimento)
+Quando aparecer `Started Application`, a API estará disponível em **http://localhost:8080**.
 
-```bash
-docker run -d \
-  --name cinema-api \
-  -p 8080:8080 \
-  -e SPRING_PROFILES_ACTIVE=default \
-  -e DB_SERVER_URL=host.docker.internal \
-  -e DB_SERVER_PORT=3306 \
-  -e DB_SCHEMA=cinema_db \
-  -e DB_USER=root \
-  -e DB_PWD=root \
-  cinema-api:1.0
-```
-
-> `host.docker.internal` permite que o container acesse um banco rodando na
-> máquina host. Em Linux, pode ser necessário adicionar
-> `--add-host=host.docker.internal:host-gateway` ao comando `docker run`.
-
-### 3. Rodar com o profile `prd` (produção)
-
-Antes de iniciar, crie o banco e as tabelas (elas **não** são criadas
-automaticamente nesse profile) usando o script `database/schema.sql`:
-
-```bash
-mysql -h <host> -P <porta> -u <usuario> -p < database/schema.sql
-```
-
-Depois, inicie o container:
-
-```bash
-docker run -d \
-  --name cinema-api-prd \
-  -p 8080:8080 \
-  -e SPRING_PROFILES_ACTIVE=prd \
-  -e DB_SERVER_URL=<host_do_banco> \
-  -e DB_SERVER_PORT=3306 \
-  -e DB_SCHEMA=cinema_db \
-  -e DB_USER=<usuario> \
-  -e DB_PWD=<senha> \
-  cinema-api:1.0
-```
-
----
-
-## 📥 Executando a imagem publicada no Docker Hub
-
-### 1. Baixar a imagem
-
-```bash
-docker pull amilzera/cinema-api-final:1.0
-```
-
-### 2. Executar o container
-
-```bash
-docker run -d \
-  --name cinema-api \
-  -p 8080:8080 \
-  -e SPRING_PROFILES_ACTIVE=prd \
-  -e DB_SERVER_URL=<host_do_banco> \
-  -e DB_SERVER_PORT=3306 \
-  -e DB_SCHEMA=cinema_db \
-  -e DB_USER=<usuario> \
-  -e DB_PWD=<senha> \
-  amilzera/cinema-api-final:1.0
-```
-
-A aplicação ficará disponível em `http://localhost:8080`.
-
----
-
-## 📖 Swagger / OpenAPI
-
-Com a aplicação em execução, acesse:
-
-http://localhost:8080/swagger-ui.html
-
+> **Problemas comuns**
+> - `Cannot find path '.mvn\wrapper\maven-wrapper.properties'` → a pasta oculta `.mvn/` não foi copiada. Clone o repositório completo.
+> - `Could not resolve placeholder 'DB_PWD'` → a variável `DB_PWD` não foi definida.
+> - `Login failed` / `Cannot open database` → confira usuário, senha e se o banco existe.
+> - Timeout de conexão → verifique host, porta (1433) e firewall.
 
 ---
 
 ## 📋 Endpoints
 
-### Filmes
+Base URL: `http://localhost:8080`
+Documentação interativa (Swagger): **http://localhost:8080/swagger-ui.html**
 
-| Método | Rota          | Descrição      |
-|--------|---------------|----------------|
-| GET    | /filmes       | Lista todos    |
-| GET    | /filmes/{id}  | Busca por ID   |
-| POST   | /filmes       | Cria filme     |
-| PUT    | /filmes/{id}  | Atualiza filme |
-| DELETE | /filmes/{id}  | Remove filme   |
+### Filmes — `/filmes`
 
-### Salas
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/filmes` | Lista todos os filmes |
+| GET | `/filmes/{id}` | Busca filme por ID (404 se não existir) |
+| POST | `/filmes` | Cadastra um filme |
+| PUT | `/filmes/{id}` | Atualiza um filme |
+| DELETE | `/filmes/{id}` | Remove um filme (204 / 404) |
 
-| Método | Rota         | Descrição     |
-|--------|--------------|---------------|
-| GET    | /salas       | Lista todas   |
-| GET    | /salas/{id}  | Busca por ID  |
-| POST   | /salas       | Cria sala     |
-| PUT    | /salas/{id}  | Atualiza sala |
-| DELETE | /salas/{id}  | Remove sala   |
+**Corpo (JSON):**
 
----
+```json
+{
+  "titulo": "Interestelar",
+  "genero": "Ficção científica",
+  "duracaoMinutos": 169,
+  "classificacaoEtaria": "10 anos",
+  "sinopse": "Exploradores viajam através de um buraco de minhoca."
+}
+```
 
-## 📦 Docker — comandos úteis
+### Salas — `/salas`
 
-```bash
-# Listar containers em execução
-docker ps
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/salas` | Lista todas as salas |
+| GET | `/salas/{id}` | Busca sala por ID (404 se não existir) |
+| POST | `/salas` | Cadastra uma sala |
+| PUT | `/salas/{id}` | Atualiza uma sala |
+| DELETE | `/salas/{id}` | Remove uma sala (204 / 404) |
 
-# Ver logs
-docker logs -f cinema-api
+**Corpo (JSON):**
 
-# Parar o container
-docker stop cinema-api
-
-# Remover o container
-docker rm cinema-api
-
-# Remover a imagem
-docker rmi cinema-api:1.0
+```json
+{
+  "nome": "Sala 1",
+  "tipo": "IMAX",
+  "capacidade": 120,
+  "tresD": true,
+  "observacao": "Sala principal"
+}
 ```
 
 ---
 
-## 🔒 Segurança
+## 🧪 Como testar a API
 
-Não versione credenciais reais no repositório. Utilize variáveis de ambiente
-(como mostrado acima) para fornecer usuário, senha e dados de conexão do
-banco em tempo de execução.
+Roteiro rápido (pelo Swagger ou pelo `curl`):
+
+```bash
+# 1) Inserir (grava no SQL Server)
+curl -X POST http://localhost:8080/filmes \
+  -H "Content-Type: application/json" \
+  -d '{"titulo":"Interestelar","genero":"Ficção científica","duracaoMinutos":169,"classificacaoEtaria":"10 anos","sinopse":"Exploradores viajam através de um buraco de minhoca."}'
+
+# 2) Consultar (lê do SQL Server)
+curl http://localhost:8080/filmes
+curl http://localhost:8080/filmes/1
+
+# 3) Alterar
+curl -X PUT http://localhost:8080/filmes/1 \
+  -H "Content-Type: application/json" \
+  -d '{"titulo":"Interestelar","genero":"Ficção","duracaoMinutos":169,"classificacaoEtaria":"12 anos","sinopse":null}'
+
+# 4) Excluir
+curl -X DELETE http://localhost:8080/filmes/1
+
+# Salas
+curl -X POST http://localhost:8080/salas \
+  -H "Content-Type: application/json" \
+  -d '{"nome":"Sala 1","tipo":"IMAX","capacidade":120,"tresD":true,"observacao":"Sala principal"}'
+curl http://localhost:8080/salas
+```
+
+> No PowerShell, use `curl.exe` (e não `curl`) ou o Swagger.
+
+### Verificando os dados no SQL Server
+
+Após os testes, confirme diretamente no banco que os dados foram gravados:
+
+```sql
+SELECT * FROM filmes;
+SELECT * FROM salas;
+```
+
+---
+
+## 🐳 Execução com Docker (opcional)
+
+```bash
+docker build -t cinema-api:2.0 .
+
+docker run -d --name cinema-api -p 8080:8080 \
+  -e DB_SERVER_URL=<host> \
+  -e DB_SERVER_PORT=1433 \
+  -e DB_SCHEMA=<banco> \
+  -e DB_USER=<usuario> \
+  -e DB_PWD=<senha> \
+  cinema-api:2.0
+```
+
+Se o SQL Server estiver na máquina host, use `host.docker.internal` em `DB_SERVER_URL`.
